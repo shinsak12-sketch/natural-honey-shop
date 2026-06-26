@@ -102,9 +102,17 @@
 <script src="assets/js/layout.js"></script>
 <script>
 renderHeader('home'); renderFooter();
-// 추천 상품 렌더
-const featured = DB.getProducts().filter(p=>p.featured).slice(0,4);
-document.getElementById('featured-grid').innerHTML = featured.map(p=>productCardHTML(p)).join('') || '<p class="empty">준비 중인 상품이 곧 올라옵니다.</p>';
+// 추천 상품 렌더 (서버에서 로드)
+(async () => {
+  const grid = document.getElementById('featured-grid');
+  try{
+    const all = await DB.getProducts();
+    const featured = all.filter(p=>p.featured).slice(0,4);
+    grid.innerHTML = featured.map(p=>productCardHTML(p)).join('') || '<p class="empty">준비 중인 상품이 곧 올라옵니다.</p>';
+  }catch(e){
+    grid.innerHTML = '<p class="empty">상품을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>';
+  }
+})();
 </script>
 </body>
 </html>

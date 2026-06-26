@@ -23,9 +23,7 @@
 <script src="assets/js/layout.js"></script>
 <script>
 renderHeader('products'); renderFooter();
-const all = DB.getProducts();
-const cats = ['전체', ...Array.from(new Set(all.map(p=>p.category)))];
-let cur = '전체';
+let all = [], cats = ['전체'], cur = '전체';
 const params = new URLSearchParams(location.search);
 if(params.get('cat')) cur = params.get('cat');
 
@@ -40,7 +38,16 @@ function renderGrid(){
     ? list.map(p=>productCardHTML(p)).join('')
     : '<p class="empty" style="grid-column:1/-1">해당 카테고리에 상품이 없습니다.</p>';
 }
-renderFilter(); renderGrid();
+(async () => {
+  try{
+    all = await DB.getProducts();
+    cats = ['전체', ...Array.from(new Set(all.map(p=>p.category)))];
+  }catch(e){
+    document.getElementById('grid').innerHTML = '<p class="empty" style="grid-column:1/-1">상품을 불러오지 못했습니다.</p>';
+    return;
+  }
+  renderFilter(); renderGrid();
+})();
 </script>
 </body>
 </html>

@@ -23,13 +23,18 @@
 <script>
 renderHeader('cart'); renderFooter();
 const FREE_SHIP=50000, SHIP_FEE=3500;
-const items = DB.getCartDetailed();
 const slot = document.getElementById('checkout-slot');
+let cartItems = [];
 
-if(!items.length){
-  slot.innerHTML = `<div class="empty"><div class="ico">🛒</div><p>주문할 상품이 없습니다.</p><a href="products.html" class="btn btn-primary">상품 보러 가기</a></div>`;
-} else {
-  const subtotal = items.reduce((s,i)=>s+i.lineTotal,0);
+(async () => {
+  slot.innerHTML = '<p class="empty">불러오는 중…</p>';
+  try{ cartItems = await DB.getCartDetailed(); }
+  catch(e){ slot.innerHTML = '<p class="empty">불러오지 못했습니다.</p>'; return; }
+  if(!cartItems.length){
+    slot.innerHTML = `<div class="empty"><div class="ico">🛒</div><p>주문할 상품이 없습니다.</p><a href="products.html" class="btn btn-primary">상품 보러 가기</a></div>`;
+    return;
+  }
+  const subtotal = cartItems.reduce((s,i)=>s+i.lineTotal,0);
   const ship = subtotal>=FREE_SHIP?0:SHIP_FEE;
   const total = subtotal+ship;
   slot.innerHTML = `
@@ -50,39 +55,41 @@ if(!items.length){
       <div class="pay-note">
         🔧 현재는 <b>온라인 결제 준비 단계</b>입니다. 지금 주문하시면 주문서가 접수되며,
         실제 결제·입금 안내는 <b>전화(010-9859-3044)</b>로 연락드립니다.
-        정식 오픈 시 이 자리에 카드·간편결제가 바로 연결됩니다.
       </div>
     </div>
 
     <aside class="summary">
       <h3>주문 상품</h3>
-      ${items.map(i=>`<div class="summary-row"><span>${i.product.name} × ${i.qty}</span><span>${won(i.lineTotal)}</span></div>`).join('')}
+      ${cartItems.map(i=>`<div class="summary-row"><span>${i.product.name} × ${i.qty}</span><span>${won(i.lineTotal)}</span></div>`).join('')}
       <div style="height:1px;background:var(--line);margin:12px 0"></div>
       <div class="summary-row"><span>상품 합계</span><span>${won(subtotal)}</span></div>
       <div class="summary-row"><span>배송비</span><span>${ship===0?'무료':won(ship)}</span></div>
       <div class="summary-total"><span>총 결제금액</span><span class="amt">${won(total)}</span></div>
-      <button class="btn btn-primary btn-block" style="margin-top:18px" onclick="placeOrder(${total},${ship})">주문 접수하기</button>
+      <button class="btn btn-primary btn-block" style="margin-top:18px" id="placeBtn" onclick="placeOrder(${total},${ship})">주문 접수하기</button>
     </aside>
   </div>`;
-
-  // 결제수단 선택 하이라이트
   document.getElementById('pay').addEventListener('change',e=>{
     document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('sel'));
     e.target.closest('.pay-opt').classList.add('sel');
   });
-}
+})();
 
-function placeOrder(total, ship){
+async function placeOrder(total, ship){
   const name=val('f-name'), phone=val('f-phone'), a1=val('f-addr1'), a2=val('f-addr2');
   if(!name||!phone||!a1){ toast('받는 분 이름·연락처·주소를 입력해주세요'); return; }
+  const btn=document.getElementById('placeBtn'); btn.disabled=true; btn.textContent='접수 중…';
   const pay = document.querySelector('input[name=pay]:checked').value;
-  const order = DB.createOrder({
-    items: DB.getCartDetailed().map(i=>({ name:i.product.name, spec:i.product.spec, price:i.product.price, qty:i.qty, emoji:i.product.emoji })),
-    buyer: { name, phone, address: a1+' '+a2, memo: val('f-memo') },
-    payMethod: pay, shippingFee: ship, total, status:'주문접수'
-  });
-  DB.clearCart();
-  location.href = 'order-done.html?no='+encodeURIComponent(order.orderNo);
+  try{
+    const order = await DB.createOrder({
+      items: cartItems.map(i=>({ name:i.product.name, spec:i.product.spec, price:i.product.price, qty:i.qty, emoji:i.product.emoji })),
+      buyer: { name, phone, address: a1+' '+a2, memo: val('f-memo') },
+      payMethod: pay, shippingFee: ship, total
+    });
+    DB.clearCart();
+    location.href = 'order-done.html?no='+encodeURIComponent(order.orderNo);
+  }catch(e){
+    toast('주문 접수 실패: '+e.message); btn.disabled=false; btn.textContent='주문 접수하기';
+  }
 }
 function val(id){ return (document.getElementById(id)?.value||'').trim(); }
 </script>

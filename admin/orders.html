@@ -44,8 +44,10 @@ const STATUSES = ['전체','주문접수','결제완료','배송준비','배송�
 const STEP = ['주문접수','결제완료','배송준비','배송중','배송완료','취소'];
 let filter = '전체', curId = null;
 
+let _orders = [];
+async function loadOrders(){ try{ _orders = await DB.getOrders(); }catch(e){ _orders=[]; } }
 function renderFilter(){
-  const orders = DB.getOrders();
+  const orders = _orders;
   document.getElementById('filter').innerHTML = STATUSES.map(s=>{
     const n = s==='전체'?orders.length:orders.filter(o=>o.status===s).length;
     return `<button class="filter-chip ${s===filter?'active':''}" style="padding:8px 15px;border-radius:100px;background:${s===filter?'var(--charcoal)':'#fff'};color:${s===filter?'#fff':'#6b5d4a'};border:1.5px solid var(--line);font-weight:600;font-size:.86rem" onclick="setFilter('${s}')">${s} ${n>0?`(${n})`:''}</button>`;
@@ -54,7 +56,7 @@ function renderFilter(){
 function setFilter(s){ filter=s; renderFilter(); render(); }
 
 function render(){
-  let orders = DB.getOrders();
+  let orders = _orders;
   if(filter!=='전체') orders = orders.filter(o=>o.status===filter);
   document.getElementById('count').textContent = `(${orders.length}건)`;
   const tbl = document.getElementById('tbl');
@@ -74,7 +76,7 @@ function render(){
 
 function openOrder(id){
   curId = id;
-  const o = DB.getOrder(id);
+  const o = _orders.find(x=>x.id===id);
   document.getElementById('m-title').textContent = `주문 ${o.orderNo}`;
   document.getElementById('m-body').innerHTML = `
     <div class="fld-row">
@@ -101,13 +103,16 @@ function openOrder(id){
   document.getElementById('modal').classList.add('show');
 }
 function close_(){ document.getElementById('modal').classList.remove('show'); }
-function saveOrder(){
-  DB.updateOrder(curId, {
-    status: document.getElementById('o-status').value,
-    tracking: document.getElementById('o-tracking').value.trim()
-  });
-  adminToast('주문 정보를 저장했습니다');
-  close_(); renderFilter(); render();
+async function saveOrder(){
+  try{
+    await DB.updateOrder(curId, {
+      status: document.getElementById('o-status').value,
+      tracking: document.getElementById('o-tracking').value.trim()
+    });
+    await loadOrders();
+    adminToast('주문 정보를 저장했습니다');
+    close_(); renderFilter(); render();
+  }catch(e){ adminToast('저장 실패: '+e.message); }
 }
 function fmtDate(ts,withTime){
   const d = new Date(ts);
@@ -115,7 +120,7 @@ function fmtDate(ts,withTime){
   return withTime ? s+` ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : s;
 }
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') close_(); });
-renderFilter(); render();
+(async () => { await loadOrders(); renderFilter(); render(); })();
 }
 </script>
 </body></html>

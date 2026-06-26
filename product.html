@@ -19,12 +19,16 @@
 <script>
 renderHeader('products'); renderFooter();
 const id = new URLSearchParams(location.search).get('id');
-const p = DB.getProduct(id);
 const slot = document.getElementById('detail-slot');
+let p = null;
 
-if(!p){
-  slot.innerHTML = `<div class="empty"><div class="ico">🐝</div><p>상품을 찾을 수 없습니다.</p><a href="products.html" class="btn btn-primary">상품 목록으로</a></div>`;
-} else {
+(async () => {
+  slot.innerHTML = '<p class="empty">불러오는 중…</p>';
+  p = await DB.getProduct(id);
+  if(!p){
+    slot.innerHTML = `<div class="empty"><div class="ico">🐝</div><p>상품을 찾을 수 없습니다.</p><a href="products.html" class="btn btn-primary">상품 목록으로</a></div>`;
+    return;
+  }
   const soldout = p.status==='soldout' || p.stock<=0;
   slot.innerHTML = `
     <div class="breadcrumb"><a href="index.html">홈</a> › <a href="products.html">상품</a> › <a href="products.html?cat=${encodeURIComponent(p.category)}">${p.category}</a> › ${p.name}</div>
@@ -60,7 +64,7 @@ if(!p){
         </div>
       </div>
     </div>`;
-}
+})();
 function chgQty(d){
   const i = document.getElementById('qty');
   let v = parseInt(i.value)+d;

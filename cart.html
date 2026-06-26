@@ -24,9 +24,12 @@
 renderHeader('cart'); renderFooter();
 const FREE_SHIP = 50000, SHIP_FEE = 3500;
 
-function render(){
-  const items = DB.getCartDetailed();
+async function render(){
   const slot = document.getElementById('cart-slot');
+  slot.innerHTML = '<p class="empty">불러오는 중…</p>';
+  let items;
+  try{ items = await DB.getCartDetailed(); }
+  catch(e){ slot.innerHTML = '<p class="empty">장바구니를 불러오지 못했습니다.</p>'; return; }
   if(!items.length){
     slot.innerHTML = `<div class="empty"><div class="ico">🛒</div><p>장바구니가 비어 있습니다.</p><a href="products.html" class="btn btn-primary">상품 보러 가기</a></div>`;
     return;

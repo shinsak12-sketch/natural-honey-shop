@@ -64,8 +64,10 @@ renderAdminShell('prod');
 const EMOJIS = ['🍯','🫙','🐝','🌼','🌿','🎁','🥄','🍶'];
 let selEmoji = '🍯';
 
-function render(){
-  const products = DB.getProducts();
+async function render(){
+  let products;
+  try{ products = await DB.getProducts(); }
+  catch(e){ document.getElementById('tbl').innerHTML = `<tbody><tr><td><div class="empty"><p>불러오지 못했습니다.</p></div></td></tr></tbody>`; return; }
   document.getElementById('count').textContent = `(${products.length}개)`;
   // 카테고리 자동완성
   const cats = Array.from(new Set(products.map(p=>p.category)));
@@ -94,10 +96,10 @@ function renderEmojiPick(){
 }
 function pickEmoji(e){ selEmoji=e; renderEmojiPick(); }
 
-function openForm(id){
+async function openForm(id){
   renderEmojiPick();
   if(id){
-    const p = DB.getProduct(id);
+    const p = await DB.getProduct(id);
     document.getElementById('modal-title').textContent = '상품 수정';
     document.getElementById('m-id').value = p.id;
     document.getElementById('m-name').value = p.name;
@@ -121,7 +123,7 @@ function openForm(id){
 }
 function closeForm(){ document.getElementById('modal').classList.remove('show'); }
 
-function save(){
+async function save(){
   const name = v('m-name'), cat = v('m-cat'), price = parseInt(v('m-price'))||0, stock = parseInt(v('m-stock'));
   if(!name){ adminToast('상품명을 입력하세요'); return; }
   if(!cat){ adminToast('카테고리를 입력하세요'); return; }
@@ -134,13 +136,16 @@ function save(){
     featured:document.getElementById('m-featured').checked, desc:v('m-desc')
   };
   const id = v('m-id');
-  if(id){ DB.updateProduct(id, data); adminToast('상품을 수정했습니다'); }
-  else { DB.addProduct(data); adminToast('새 상품을 등록했습니다'); }
-  closeForm(); render();
+  try{
+    if(id){ await DB.updateProduct(id, data); adminToast('상품을 수정했습니다'); }
+    else { await DB.addProduct(data); adminToast('새 상품을 등록했습니다'); }
+    closeForm(); render();
+  }catch(e){ adminToast('저장 실패: '+e.message); }
 }
-function del(id,name){
+async function del(id,name){
   if(confirm(`'${name}' 상품을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)){
-    DB.deleteProduct(id); adminToast('상품을 삭제했습니다'); render();
+    try{ await DB.deleteProduct(id); adminToast('상품을 삭제했습니다'); render(); }
+    catch(e){ adminToast('삭제 실패: '+e.message); }
   }
 }
 function v(id){ return (document.getElementById(id).value||'').trim(); }
