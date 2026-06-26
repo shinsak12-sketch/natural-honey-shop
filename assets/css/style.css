@@ -42,7 +42,7 @@ button{font-family:inherit;cursor:pointer}
 }
 .logo{display:flex;align-items:center;gap:9px;color:var(--cream)}
 .logo svg{width:30px;height:30px}
-.logo b{font-family:'Gowun Batang',serif;font-size:1.35rem;font-weight:700;letter-spacing:.03em}
+.logo b{font-family:'Gowun Batang',serif;font-size:1.18rem;font-weight:700;letter-spacing:.02em;white-space:nowrap}
 .logo b span{color:var(--honey-light)}
 .site-nav{display:flex;gap:clamp(12px,2vw,30px);align-items:center}
 .site-nav a{color:var(--cream);font-size:.92rem;font-weight:500;opacity:.85;transition:.2s}

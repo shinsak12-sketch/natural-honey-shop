@@ -17,7 +17,7 @@ function renderHeader(active){
   const nav = links.map(l=>`<a href="${l.href}" class="${active===l.key?'active':''}">${l.label}</a>`).join('');
   const html = `
   <header class="site-header">
-    <a href="index.html" class="logo">${LOGO_SVG}<b>자연<span>꽃꿀</span></b></a>
+    <a href="index.html" class="logo">${LOGO_SVG}<b>월악산 <span>꿀벌쉼터</span></b></a>
     <button class="nav-toggle" aria-label="메뉴">☰</button>
     <nav class="site-nav">
       ${nav}
@@ -38,7 +38,7 @@ function renderFooter(){
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href="index.html" class="logo">${LOGO_SVG}<b style="color:var(--cream)">자연<span style="color:var(--honey-light)">꽃꿀</span></b></a>
+          <a href="index.html" class="logo">${LOGO_SVG}<b style="color:var(--cream)">월악산 <span style="color:var(--honey-light)">꿀벌쉼터</span></b></a>
           <p>국내산 천연벌꿀 100%. 자연 그대로의 향기를 담아 정직하게 전합니다.</p>
         </div>
         <div class="footer-col">
@@ -62,9 +62,9 @@ function renderFooter(){
         </div>
       </div>
       <div class="footer-legal">
-        상호: 자연꽃꿀(꿀벌쉼터) &nbsp;|&nbsp; 대표: 이성희 &nbsp;|&nbsp; 원산지: 국내산<br>
+        상호: 월악산 꿀벌쉼터 &nbsp;|&nbsp; 대표: 이성희 &nbsp;|&nbsp; 원산지: 국내산<br>
         ※ 사업자등록번호·통신판매업신고번호·주소 등은 온라인 정식 오픈 시 등록·표기됩니다.<br>
-        © 2026 자연꽃꿀. 건강한 단맛, 자연에서 온 그대로.
+        © 2026 월악산 꿀벌쉼터. 건강한 단맛, 자연에서 온 그대로.
       </div>
     </div>
   </footer>`;

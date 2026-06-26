@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>주문하기 — 자연꽃꿀</title>
+<title>주문하기 — 월악산 꿀벌쉼터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -18,6 +18,7 @@
   </div>
 </main>
 <div id="footer-slot"></div>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/layout.js"></script>
 <script>
@@ -43,7 +44,14 @@ let cartItems = [];
       <h3 class="serif" style="font-size:1.3rem;margin-bottom:16px">받는 분 정보</h3>
       <div class="field"><label>받는 분 이름 <span class="req">*</span></label><input id="f-name" placeholder="홍길동"></div>
       <div class="field"><label>연락처 <span class="req">*</span></label><input id="f-phone" placeholder="010-0000-0000" inputmode="numeric"></div>
-      <div class="field"><label>주소 <span class="req">*</span></label><input id="f-addr1" placeholder="기본 주소"><input id="f-addr2" placeholder="상세 주소" style="margin-top:8px"></div>
+      <div class="field"><label>주소 <span class="req">*</span></label>
+        <div style="display:flex;gap:8px">
+          <input id="f-zip" placeholder="우편번호" readonly style="flex:0 0 110px;background:var(--cream-deep)">
+          <button type="button" class="btn btn-ghost" style="flex:0 0 auto;padding:12px 16px" onclick="searchAddr()">주소 검색</button>
+        </div>
+        <input id="f-addr1" placeholder="도로명/지번 주소" readonly style="margin-top:8px;background:var(--cream-deep)">
+        <input id="f-addr2" placeholder="상세 주소 (동·호수 등)" style="margin-top:8px">
+      </div>
       <div class="field"><label>배송 메모</label><textarea id="f-memo" placeholder="문 앞에 두고 가주세요 등"></textarea></div>
 
       <h3 class="serif" style="font-size:1.3rem;margin:30px 0 16px">결제 수단</h3>
@@ -75,14 +83,15 @@ let cartItems = [];
 })();
 
 async function placeOrder(total, ship){
-  const name=val('f-name'), phone=val('f-phone'), a1=val('f-addr1'), a2=val('f-addr2');
+  const name=val('f-name'), phone=val('f-phone'), zip=val('f-zip'), a1=val('f-addr1'), a2=val('f-addr2');
   if(!name||!phone||!a1){ toast('받는 분 이름·연락처·주소를 입력해주세요'); return; }
   const btn=document.getElementById('placeBtn'); btn.disabled=true; btn.textContent='접수 중…';
   const pay = document.querySelector('input[name=pay]:checked').value;
+  const fullAddr = (zip?`(${zip}) `:'') + a1 + (a2?' '+a2:'');
   try{
     const order = await DB.createOrder({
       items: cartItems.map(i=>({ name:i.product.name, spec:i.product.spec, price:i.product.price, qty:i.qty, emoji:i.product.emoji })),
-      buyer: { name, phone, address: a1+' '+a2, memo: val('f-memo') },
+      buyer: { name, phone, address: fullAddr, memo: val('f-memo') },
       payMethod: pay, shippingFee: ship, total
     });
     DB.clearCart();
@@ -90,6 +99,17 @@ async function placeOrder(total, ship){
   }catch(e){
     toast('주문 접수 실패: '+e.message); btn.disabled=false; btn.textContent='주문 접수하기';
   }
+}
+// 카카오(다음) 우편번호 검색
+function searchAddr(){
+  if(typeof daum==='undefined'||!daum.Postcode){ toast('주소 검색을 불러오지 못했습니다. 잠시 후 다시 시도해주세요'); return; }
+  new daum.Postcode({
+    oncomplete: function(data){
+      document.getElementById('f-zip').value = data.zonecode;
+      document.getElementById('f-addr1').value = data.roadAddress || data.jibunAddress;
+      document.getElementById('f-addr2').focus();
+    }
+  }).open();
 }
 function val(id){ return (document.getElementById(id)?.value||'').trim(); }
 </script>

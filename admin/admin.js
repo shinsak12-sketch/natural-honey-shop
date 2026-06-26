@@ -18,7 +18,7 @@ function renderAdminShell(active){
   const sb = document.getElementById('sidebar-slot');
   sb.outerHTML = `
   <aside class="sidebar" id="sidebar">
-    <div class="brand">${A_LOGO}<b>자연<span>꽃꿀</span></b></div>
+    <div class="brand">${A_LOGO}<b>월악산 <span>꿀벌쉼터</span></b></div>
     <nav class="side-nav">${nav}</nav>
     <div class="side-foot">
       <a href="../index.html" target="_blank">↗ 쇼핑몰 보기</a>
@@ -27,7 +27,7 @@ function renderAdminShell(active){
   </aside>`;
   // 모바일바
   const mb = document.getElementById('mobilebar-slot');
-  if(mb){ mb.outerHTML = `<div class="mobile-bar"><button onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><b>자연꽃꿀 관리자</b></div>`; }
+  if(mb){ mb.outerHTML = `<div class="mobile-bar"><button onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><b>월악산 꿀벌쉼터 관리자</b></div>`; }
 }
 function adminToast(msg){
   let t=document.querySelector('.toast');
