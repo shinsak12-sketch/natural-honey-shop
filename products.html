@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전체 상품 — 자연꽃꿀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="header-slot"></div>
+<main class="page">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">홈</a> › 전체 상품</div>
+    <div class="page-head"><span class="eyebrow">우리집 꿀</span><h1 class="page-title">전체 상품</h1><p class="page-sub">제철 꿀을 카테고리별로 만나보세요.</p></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="product-grid" id="grid"></div>
+  </div>
+</main>
+<div id="footer-slot"></div>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+renderHeader('products'); renderFooter();
+const all = DB.getProducts();
+const cats = ['전체', ...Array.from(new Set(all.map(p=>p.category)))];
+let cur = '전체';
+const params = new URLSearchParams(location.search);
+if(params.get('cat')) cur = params.get('cat');
+
+function renderFilter(){
+  document.getElementById('filter-bar').innerHTML = cats.map(c=>
+    `<button class="filter-chip ${c===cur?'active':''}" onclick="setCat('${c}')">${c}</button>`).join('');
+}
+function setCat(c){ cur=c; renderFilter(); renderGrid(); }
+function renderGrid(){
+  const list = cur==='전체' ? all : all.filter(p=>p.category===cur);
+  document.getElementById('grid').innerHTML = list.length
+    ? list.map(p=>productCardHTML(p)).join('')
+    : '<p class="empty" style="grid-column:1/-1">해당 카테고리에 상품이 없습니다.</p>';
+}
+renderFilter(); renderGrid();
+</script>
+</body>
+</html>

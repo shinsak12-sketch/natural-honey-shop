@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>장바구니 — 자연꽃꿀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="header-slot"></div>
+<main class="page">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">홈</a> › 장바구니</div>
+    <div class="page-head"><h1 class="page-title">장바구니</h1></div>
+    <div id="cart-slot"></div>
+  </div>
+</main>
+<div id="footer-slot"></div>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+renderHeader('cart'); renderFooter();
+const FREE_SHIP = 50000, SHIP_FEE = 3500;
+
+function render(){
+  const items = DB.getCartDetailed();
+  const slot = document.getElementById('cart-slot');
+  if(!items.length){
+    slot.innerHTML = `<div class="empty"><div class="ico">🛒</div><p>장바구니가 비어 있습니다.</p><a href="products.html" class="btn btn-primary">상품 보러 가기</a></div>`;
+    return;
+  }
+  const subtotal = items.reduce((s,i)=>s+i.lineTotal,0);
+  const ship = subtotal>=FREE_SHIP?0:SHIP_FEE;
+  const total = subtotal+ship;
+  slot.innerHTML = `
+    <div class="cart-layout">
+      <div class="cart-items">
+        ${items.map(i=>`
+          <div class="cart-item">
+            <a href="product.html?id=${i.product.id}" class="thumb"><span>${i.product.emoji||'🍯'}</span></a>
+            <div>
+              <a href="product.html?id=${i.product.id}"><div class="ci-name">${i.product.name}</div></a>
+              <div class="ci-opt">${i.product.spec||''}</div>
+              <div class="ci-price">${won(i.product.price)}</div>
+            </div>
+            <div class="ci-right">
+              <div class="qty">
+                <button onclick="setQ('${i.product.id}',${i.qty-1})">−</button>
+                <input type="number" value="${i.qty}" readonly>
+                <button onclick="setQ('${i.product.id}',${i.qty+1})">+</button>
+              </div>
+              <button class="ci-remove" onclick="rm('${i.product.id}')">삭제</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <aside class="summary">
+        <h3>주문 요약</h3>
+        <div class="summary-row"><span>상품 합계</span><span>${won(subtotal)}</span></div>
+        <div class="summary-row"><span>배송비</span><span>${ship===0?'무료':won(ship)}</span></div>
+        ${subtotal<FREE_SHIP?`<div class="field-hint">${won(FREE_SHIP-subtotal)} 더 담으면 무료배송!</div>`:''}
+        <div class="summary-total"><span>총 결제금액</span><span class="amt">${won(total)}</span></div>
+        <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:18px">주문하기</a>
+        <a href="products.html" class="btn btn-ghost btn-block" style="margin-top:10px">계속 쇼핑하기</a>
+      </aside>
+    </div>`;
+}
+function setQ(id,q){ if(q<1){rm(id);return;} DB.setCartQty(id,q); updateCartBadge(); render(); }
+function rm(id){ DB.removeFromCart(id); updateCartBadge(); render(); toast('상품을 삭제했습니다'); }
+render();
+</script>
+</body>
+</html>

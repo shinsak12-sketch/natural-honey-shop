@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주문 조회 — 자연꽃꿀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="header-slot"></div>
+<main class="page">
+  <div class="container" style="max-width:620px">
+    <div class="breadcrumb"><a href="index.html">홈</a> › 주문 조회</div>
+    <div class="page-head"><h1 class="page-title">주문 조회</h1><p class="page-sub">주문번호와 연락처로 배송 상태를 확인하세요.</p></div>
+    <div class="summary" style="position:static">
+      <div class="field"><label>주문번호</label><input id="q-no" placeholder="H250101-1234"></div>
+      <div class="field"><label>연락처</label><input id="q-phone" placeholder="010-0000-0000"></div>
+      <button class="btn btn-primary btn-block" onclick="lookup()">조회하기</button>
+    </div>
+    <div id="result"></div>
+  </div>
+</main>
+<div id="footer-slot"></div>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+renderHeader(''); renderFooter();
+const STATUS_FLOW=['주문접수','결제완료','배송준비','배송중','배송완료'];
+function lookup(){
+  const no=(document.getElementById('q-no').value||'').trim();
+  const phone=(document.getElementById('q-phone').value||'').trim().replace(/-/g,'');
+  const o = DB.getOrders().find(x=>x.orderNo===no && x.buyer.phone.replace(/-/g,'')===phone);
+  const r = document.getElementById('result');
+  if(!o){ r.innerHTML=`<div class="empty" style="padding:40px 20px"><p>일치하는 주문이 없습니다.<br>주문번호와 연락처를 확인해주세요.</p></div>`; return; }
+  const idx = STATUS_FLOW.indexOf(o.status);
+  r.innerHTML = `
+    <div class="summary" style="position:static;margin-top:18px">
+      <h3>주문번호 ${o.orderNo}</h3>
+      <div style="display:flex;gap:6px;margin:16px 0">
+        ${STATUS_FLOW.map((s,i)=>`<div style="flex:1;text-align:center">
+          <div style="height:6px;border-radius:4px;background:${i<=idx?'var(--honey)':'var(--cream-deep)'}"></div>
+          <div style="font-size:.72rem;margin-top:6px;color:${i<=idx?'var(--honey-deep)':'var(--gray)'};font-weight:${i===idx?'800':'400'}">${s}</div>
+        </div>`).join('')}
+      </div>
+      ${o.tracking?`<div class="summary-row"><span>송장번호</span><span>${o.tracking}</span></div>`:''}
+      <div style="height:1px;background:var(--line);margin:12px 0"></div>
+      ${o.items.map(i=>`<div class="summary-row"><span>${i.name} × ${i.qty}</span><span>${won(i.price*i.qty)}</span></div>`).join('')}
+      <div class="summary-total"><span>총 금액</span><span class="amt">${won(o.total)}</span></div>
+    </div>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품 상세 — 자연꽃꿀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="header-slot"></div>
+<main class="page">
+  <div class="container" id="detail-slot"></div>
+</main>
+<div id="footer-slot"></div>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+renderHeader('products'); renderFooter();
+const id = new URLSearchParams(location.search).get('id');
+const p = DB.getProduct(id);
+const slot = document.getElementById('detail-slot');
+
+if(!p){
+  slot.innerHTML = `<div class="empty"><div class="ico">🐝</div><p>상품을 찾을 수 없습니다.</p><a href="products.html" class="btn btn-primary">상품 목록으로</a></div>`;
+} else {
+  const soldout = p.status==='soldout' || p.stock<=0;
+  slot.innerHTML = `
+    <div class="breadcrumb"><a href="index.html">홈</a> › <a href="products.html">상품</a> › <a href="products.html?cat=${encodeURIComponent(p.category)}">${p.category}</a> › ${p.name}</div>
+    <div class="detail">
+      <div class="detail-media">
+        ${(!soldout && p.compareAt>p.price)?'<span class="pc-badge">할인</span>':''}
+        <span class="emoji">${p.emoji||'🍯'}</span>
+        ${soldout?'<div class="pc-soldout">품절</div>':''}
+      </div>
+      <div class="detail-info">
+        <div class="pc-cat">${p.category}</div>
+        <h1>${p.name}</h1>
+        <div style="color:var(--honey-deep);font-weight:700;font-size:.92rem">${p.spec||''}</div>
+        <div class="detail-price"><span class="now">${won(p.price)}</span>${p.compareAt>p.price?`<span class="was">${won(p.compareAt)}</span>`:''}</div>
+        <div class="detail-desc">${(p.desc||'').replace(/</g,'&lt;')}</div>
+        <div class="opt-row">
+          <label>수량</label>
+          <div class="qty">
+            <button onclick="chgQty(-1)">−</button>
+            <input id="qty" type="number" value="1" min="1" max="${Math.max(1,p.stock)}" readonly>
+            <button onclick="chgQty(1)">+</button>
+          </div>
+          ${p.stock>0&&p.stock<=5?`<div class="field-hint" style="color:var(--warn)">남은 수량 ${p.stock}개</div>`:''}
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-block" ${soldout?'disabled':''} onclick="addCart(false)">장바구니 담기</button>
+          <button class="btn btn-primary btn-block" ${soldout?'disabled':''} onclick="addCart(true)">바로 구매</button>
+        </div>
+        <div class="detail-meta">
+          <span>· 원산지: 국내산</span>
+          <span>· 배송: 주문 후 1~3일 내 발송 (스티로폼 보냉 포장)</span>
+          <span>· 문의: 010-9859-3044 (이성희)</span>
+        </div>
+      </div>
+    </div>`;
+}
+function chgQty(d){
+  const i = document.getElementById('qty');
+  let v = parseInt(i.value)+d;
+  v = Math.max(1, Math.min(parseInt(i.max)||99, v));
+  i.value = v;
+}
+function addCart(goCart){
+  const q = parseInt(document.getElementById('qty').value)||1;
+  DB.addToCart(id, q); updateCartBadge();
+  if(goCart){ location.href='cart.html'; }
+  else { toast(`장바구니에 ${q}개 담았습니다`); }
+}
+</script>
+</body>
+</html>

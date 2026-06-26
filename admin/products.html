@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품 관리 — 자연꽃꿀 관리자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="admin">
+  <div id="sidebar-slot"></div>
+  <div class="main">
+    <div id="mobilebar-slot"></div>
+    <div class="topbar">
+      <div><h1>상품 관리</h1><div class="sub">제철 꿀을 직접 등록하고 수정하세요. 등록한 상품은 쇼핑몰에 바로 보입니다.</div></div>
+      <button class="btn btn-honey" onclick="openForm()">+ 새 상품 등록</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>전체 상품 <span class="muted" id="count" style="font-weight:400;font-size:.9rem"></span></h2></div>
+      <div class="panel-body tbl-wrap"><table class="tbl" id="tbl"></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- 등록/수정 모달 -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">새 상품 등록</h3><button class="x" onclick="closeForm()">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id">
+      <div class="fld">
+        <label>상품 사진 (이모지로 표시) <span class="req">*</span></label>
+        <div class="emoji-pick" id="emoji-pick"></div>
+      </div>
+      <div class="fld"><label>상품명 <span class="req">*</span></label><input id="m-name" placeholder="예: 아카시아 꽃꿀 스틱"></div>
+      <div class="fld-row">
+        <div class="fld"><label>카테고리 <span class="req">*</span></label><input id="m-cat" placeholder="예: 스틱 / 통꿀 / 선물세트" list="cats"><datalist id="cats"></datalist></div>
+        <div class="fld"><label>규격/구성</label><input id="m-spec" placeholder="예: 15g × 60포 · 900g"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label>판매가 (원) <span class="req">*</span></label><input id="m-price" type="number" inputmode="numeric" placeholder="38000"></div>
+        <div class="fld"><label>정상가 (원, 할인 표시용)</label><input id="m-compare" type="number" inputmode="numeric" placeholder="45000"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label>재고 수량 <span class="req">*</span></label><input id="m-stock" type="number" inputmode="numeric" placeholder="40"></div>
+        <div class="fld"><label>판매 상태</label><select id="m-status"><option value="on">판매중</option><option value="soldout">품절</option></select></div>
+      </div>
+      <div class="fld"><label><input type="checkbox" id="m-featured" style="width:auto;margin-right:6px">홈 화면 추천 상품으로 표시</label></div>
+      <div class="fld"><label>상품 설명</label><textarea id="m-desc" placeholder="꿀의 특징, 채밀 시기, 드시는 법 등을 자유롭게 적어주세요."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeForm()">취소</button>
+      <button class="btn btn-primary" onclick="save()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="admin.js"></script>
+<script>
+if(!adminGuard()) {} else {
+renderAdminShell('prod');
+const EMOJIS = ['🍯','🫙','🐝','🌼','🌿','🎁','🥄','🍶'];
+let selEmoji = '🍯';
+
+function render(){
+  const products = DB.getProducts();
+  document.getElementById('count').textContent = `(${products.length}개)`;
+  // 카테고리 자동완성
+  const cats = Array.from(new Set(products.map(p=>p.category)));
+  document.getElementById('cats').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+  const tbl = document.getElementById('tbl');
+  if(!products.length){ tbl.innerHTML = `<tbody><tr><td><div class="empty"><div class="ico">🍯</div><p>등록된 상품이 없습니다.<br>새 상품을 등록해보세요.</p></div></td></tr></tbody>`; return; }
+  tbl.innerHTML = `
+    <thead><tr><th></th><th>상품명</th><th>카테고리</th><th>판매가</th><th>재고</th><th>상태</th><th></th></tr></thead>
+    <tbody>${products.map(p=>`<tr>
+      <td class="pemoji">${p.emoji}</td>
+      <td><div class="pname">${p.name}${p.featured?' <span class="tag tag-low" style="font-size:.65rem">추천</span>':''}</div><div class="muted">${p.spec||''}</div></td>
+      <td>${p.category}</td>
+      <td style="font-weight:700">${won(p.price)}${p.compareAt>p.price?`<div class="muted" style="text-decoration:line-through">${won(p.compareAt)}</div>`:''}</td>
+      <td><b style="color:${p.stock<=0?'var(--warn)':p.stock<=5?'#c87800':'inherit'}">${p.stock}</b></td>
+      <td>${(p.status==='soldout'||p.stock<=0)?'<span class="tag tag-off">품절</span>':'<span class="tag tag-on">판매중</span>'}</td>
+      <td><div class="act">
+        <button class="btn btn-ghost btn-sm" onclick="openForm('${p.id}')">수정</button>
+        <button class="btn btn-danger btn-sm" onclick="del('${p.id}','${p.name.replace(/'/g,'')}')">삭제</button>
+      </div></td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderEmojiPick(){
+  document.getElementById('emoji-pick').innerHTML = EMOJIS.map(e=>
+    `<button class="${e===selEmoji?'sel':''}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
+}
+function pickEmoji(e){ selEmoji=e; renderEmojiPick(); }
+
+function openForm(id){
+  renderEmojiPick();
+  if(id){
+    const p = DB.getProduct(id);
+    document.getElementById('modal-title').textContent = '상품 수정';
+    document.getElementById('m-id').value = p.id;
+    document.getElementById('m-name').value = p.name;
+    document.getElementById('m-cat').value = p.category;
+    document.getElementById('m-spec').value = p.spec||'';
+    document.getElementById('m-price').value = p.price;
+    document.getElementById('m-compare').value = p.compareAt||'';
+    document.getElementById('m-stock').value = p.stock;
+    document.getElementById('m-status').value = p.status;
+    document.getElementById('m-featured').checked = !!p.featured;
+    document.getElementById('m-desc').value = p.desc||'';
+    selEmoji = p.emoji||'🍯'; renderEmojiPick();
+  } else {
+    document.getElementById('modal-title').textContent = '새 상품 등록';
+    ['m-id','m-name','m-cat','m-spec','m-price','m-compare','m-stock','m-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('m-status').value='on';
+    document.getElementById('m-featured').checked=false;
+    selEmoji='🍯'; renderEmojiPick();
+  }
+  document.getElementById('modal').classList.add('show');
+}
+function closeForm(){ document.getElementById('modal').classList.remove('show'); }
+
+function save(){
+  const name = v('m-name'), cat = v('m-cat'), price = parseInt(v('m-price'))||0, stock = parseInt(v('m-stock'));
+  if(!name){ adminToast('상품명을 입력하세요'); return; }
+  if(!cat){ adminToast('카테고리를 입력하세요'); return; }
+  if(!price){ adminToast('판매가를 입력하세요'); return; }
+  if(isNaN(stock)){ adminToast('재고 수량을 입력하세요'); return; }
+  const data = {
+    name, category:cat, emoji:selEmoji,
+    spec:v('m-spec'), price, compareAt:parseInt(v('m-compare'))||0,
+    stock, status:document.getElementById('m-status').value,
+    featured:document.getElementById('m-featured').checked, desc:v('m-desc')
+  };
+  const id = v('m-id');
+  if(id){ DB.updateProduct(id, data); adminToast('상품을 수정했습니다'); }
+  else { DB.addProduct(data); adminToast('새 상품을 등록했습니다'); }
+  closeForm(); render();
+}
+function del(id,name){
+  if(confirm(`'${name}' 상품을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)){
+    DB.deleteProduct(id); adminToast('상품을 삭제했습니다'); render();
+  }
+}
+function v(id){ return (document.getElementById(id).value||'').trim(); }
+
+// 모달 바깥 클릭 닫기
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeForm(); });
+render();
+}
+</script>
+</body></html>
